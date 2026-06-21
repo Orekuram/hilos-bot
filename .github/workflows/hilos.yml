@@ -1,0 +1,37 @@
+name: Revisar hilos
+
+on:
+  schedule:
+    # Cada 10 minutos. Ajusta el cron si quieres otra frecuencia.
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar bot
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TWITTER_USER: ${{ secrets.TWITTER_USER }}
+        run: python bot.py
+
+      - name: Guardar estado (hilos.json / seen.json)
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add hilos.json seen.json
+          git diff --quiet --cached || git commit -m "Actualizar estado de hilos"
+          git push || echo "Nada que subir"
